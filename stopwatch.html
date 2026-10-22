@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스탑워치</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Nanum+Myeongjo:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e9dfc8;
+    --bg-deep: #d6c6a2;
+    --card: #f6efdd;
+    --text: #3b2614;
+    --muted: #8a6c4a;
+    --line: #b89a6c;
+    --brass: #b8892d;
+    --wood: #6b3e1c;
+    --wood-light: #8b5a2b;
+    --start: #4f6b3a;
+    --stop: #8c2f22;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c140d;
+      --bg-deep: #120c07;
+      --card: #2a1e14;
+      --text: #f0e3c8;
+      --muted: #b59a74;
+      --line: #5e4730;
+      --brass: #d1a443;
+      --wood: #8b5a2b;
+      --wood-light: #a8743f;
+      --start: #6f8f55;
+      --stop: #b04535;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, var(--bg) 0%, var(--bg-deep) 100%);
+    color: var(--text);
+    font-family: "Nanum Myeongjo", "Cormorant Garamond", Georgia, serif;
+    padding: 16px;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 32px 24px 28px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(40, 20, 5, 0.25);
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    pointer-events: none;
+  }
+  .title {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .hourglass {
+    width: 150px;
+    height: 225px;
+    margin: 0 auto 4px;
+    display: block;
+    filter: drop-shadow(0 6px 6px rgba(40, 20, 5, 0.3));
+  }
+  .glass-turn { transform-origin: 80px 120px; }
+  .glass-turn.flipping {
+    transform: rotate(180deg);
+    transition: transform 0.9s cubic-bezier(.5, 0, .3, 1);
+  }
+  .stream {
+    stroke: #c99a4e;
+    stroke-width: 1.6;
+    stroke-dasharray: 3 2;
+    opacity: 0;
+  }
+  .stream.on {
+    opacity: 1;
+    animation: flow 0.35s linear infinite;
+  }
+  @keyframes flow { to { stroke-dashoffset: -5; } }
+  .display {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-size: clamp(2.8rem, 13vw, 4rem);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin: 4px 0 4px;
+  }
+  .display .ms { color: var(--muted); font-size: 0.55em; }
+  .ornament {
+    color: var(--brass);
+    letter-spacing: 0.6em;
+    font-size: 0.8rem;
+    margin-bottom: 20px;
+  }
+  /* 회중시계 용두를 닮은 둥근 황동 노브 */
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: clamp(10px, 4vw, 22px);
+  }
+  .knob {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .knob .face {
+    --size: 52px;
+    --enamel: #6b4a2a;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #f6efdd;
+    background:
+      radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.45), transparent 45%),
+      radial-gradient(circle, var(--enamel) 55%, color-mix(in srgb, var(--enamel) 60%, black) 100%);
+    border: 4px solid transparent;
+    background-clip: padding-box;
+    box-shadow:
+      0 0 0 3px #b8892d,
+      0 0 0 4px #7a5414,
+      inset 0 -3px 6px rgba(0, 0, 0, 0.35),
+      0 4px 8px rgba(40, 20, 5, 0.35);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .knob .face svg { width: 40%; height: 40%; fill: currentColor; }
+  .knob.main .face { --size: 76px; }
+  .knob.start .face { --enamel: var(--start); }
+  .knob.stop .face { --enamel: var(--stop); }
+  .knob .label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    padding-left: 0.25em;
+  }
+  .knob.sub { margin-top: 12px; }
+  .knob.sub .label { font-size: 0.8rem; color: var(--muted); }
+  .knob:active:not(:disabled) .face {
+    transform: translateY(2px);
+    box-shadow:
+      0 0 0 3px #b8892d,
+      0 0 0 4px #7a5414,
+      inset 0 3px 6px rgba(0, 0, 0, 0.4),
+      0 1px 3px rgba(40, 20, 5, 0.35);
+  }
+  .knob:disabled { opacity: 0.4; cursor: default; }
+  .knob:focus-visible { outline: none; }
+  .knob:focus-visible .face { outline: 2px dashed var(--brass); outline-offset: 6px; }
+  ol {
+    list-style: none;
+    margin: 20px 0 0;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    text-align: left;
+  }
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 4px;
+    border-top: 1px dashed var(--line);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  li span:first-child { color: var(--muted); font-family: "Nanum Myeongjo", serif; font-size: 0.9rem; }
+  .hint { margin-top: 18px; font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <p class="title">Tempus Fugit</p>
+    <svg class="hourglass" viewBox="0 0 160 240" aria-hidden="true">
+      <defs>
+        <linearGradient id="woodH" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#3e220d"/>
+          <stop offset="0.35" stop-color="#9a6635"/>
+          <stop offset="0.55" stop-color="#c08a52"/>
+          <stop offset="1" stop-color="#4a2a12"/>
+        </linearGradient>
+        <linearGradient id="woodV" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#b07a44"/>
+          <stop offset="0.5" stop-color="#7a4a22"/>
+          <stop offset="1" stop-color="#3e220d"/>
+        </linearGradient>
+        <linearGradient id="brass" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#7a5414"/>
+          <stop offset="0.45" stop-color="#f1d38a"/>
+          <stop offset="1" stop-color="#8a6418"/>
+        </linearGradient>
+        <linearGradient id="glass" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+          <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.08"/>
+          <stop offset="0.8" stop-color="#ffffff" stop-opacity="0.04"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0.25"/>
+        </linearGradient>
+        <linearGradient id="sand" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#a8742e"/>
+          <stop offset="0.5" stop-color="#e3b66a"/>
+          <stop offset="1" stop-color="#a8742e"/>
+        </linearGradient>
+        <clipPath id="topBulb"><path d="M41 30 H119 C119 75 86 100 82 120 H78 C74 100 41 75 41 30 Z"/></clipPath>
+        <clipPath id="bottomBulb"><path d="M78 120 H82 C86 140 119 165 119 210 H41 C41 165 74 140 78 120 Z"/></clipPath>
+        <path id="post" d="M-5 24 H5 V30 C9 34 9 40 5 44 C3 60 3 70 6 80 C10 90 10 100 6 110 C4 115 4 125 6 130 C10 140 10 150 6 160 C3 170 3 180 5 196 C9 200 9 206 5 210 V216 H-5 V210 C-9 206 -9 200 -5 196 C-3 180 -3 170 -6 160 C-10 150 -10 140 -6 130 C-4 125 -4 115 -6 110 C-10 100 -10 90 -6 80 C-3 70 -3 60 -5 44 C-9 40 -9 34 -5 30 Z" fill="url(#woodH)"/>
+      </defs>
+      <g class="glass-turn" id="glassTurn">
+        <!-- 기둥 -->
+        <use href="#post" transform="translate(22 0)"/>
+        <use href="#post" transform="translate(138 0)"/>
+
+        <!-- 모래 -->
+        <path id="topSand" fill="url(#sand)" clip-path="url(#topBulb)" d=""/>
+        <path id="bottomSand" fill="url(#sand)" clip-path="url(#bottomBulb)" d=""/>
+        <line id="stream" class="stream" x1="80" y1="119" x2="80" y2="210"/>
+
+        <!-- 유리 -->
+        <path d="M40 30 H120 C120 75 86 100 83 120 C86 140 120 165 120 210 H40 C40 165 74 140 77 120 C74 100 40 75 40 30 Z"
+              fill="url(#glass)" stroke="#d9cdb4" stroke-opacity="0.8" stroke-width="1.4"/>
+        <path d="M47 36 C47 66 62 86 72 102" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="2" stroke-linecap="round"/>
+        <path d="M72 140 C62 154 47 172 47 202" fill="none" stroke="#fff" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- 황동 고리 -->
+        <rect x="34" y="25" width="92" height="6" rx="2" fill="url(#brass)"/>
+        <rect x="34" y="209" width="92" height="6" rx="2" fill="url(#brass)"/>
+        <rect x="74" y="117" width="12" height="6" rx="2" fill="url(#brass)"/>
+
+        <!-- 나무 판 -->
+        <rect x="6" y="6" width="148" height="20" rx="4" fill="url(#woodV)"/>
+        <rect x="12" y="10" width="136" height="3" rx="1.5" fill="#fff" fill-opacity="0.15"/>
+        <rect x="6" y="214" width="148" height="20" rx="4" fill="url(#woodV)"/>
+        <rect x="12" y="218" width="136" height="3" rx="1.5" fill="#fff" fill-opacity="0.15"/>
+        <circle cx="22" cy="16" r="2.5" fill="url(#brass)"/>
+        <circle cx="138" cy="16" r="2.5" fill="url(#brass)"/>
+        <circle cx="22" cy="224" r="2.5" fill="url(#brass)"/>
+        <circle cx="138" cy="224" r="2.5" fill="url(#brass)"/>
+      </g>
+    </svg>
+    <div class="display" id="display">00:00:00<span class="ms">.00</span></div>
+    <div class="ornament">❦ ◆ ❦</div>
+    <div class="controls">
+      <button id="lapBtn" class="knob sub" disabled>
+        <span class="face"><svg viewBox="0 0 24 24"><path d="M5 3h2v18H5zM8 4h11l-3 4.5L19 13H8z"/></svg></span>
+        <span class="label">랩</span>
+      </button>
+      <button id="startBtn" class="knob main start">
+        <span class="face"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></span>
+        <span class="label">시작</span>
+      </button>
+      <button id="stopBtn" class="knob main stop" disabled>
+        <span class="face"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg></span>
+        <span class="label">끝</span>
+      </button>
+      <button id="resetBtn" class="knob sub" disabled>
+        <span class="face"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-7.7 10h2.1A6 6 0 1 0 12 6v3L7 5l5-4z"/></svg></span>
+        <span class="label">리셋</span>
+      </button>
+    </div>
+    <ol id="laps"></ol>
+    <div class="hint">Space: 시작/끝 · L: 랩 · R: 리셋</div>
+  </div>
+
+<script>
+  const display = document.getElementById('display');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const lapBtn = document.getElementById('lapBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const lapsList = document.getElementById('laps');
+
+  let running = false;
+  let startTime = 0;
+  let elapsed = 0;
+  let lastLap = 0;
+  let lapCount = 0;
+  let frameId = null;
+
+  // 모래시계: 1분마다 모래가 다 내려오면 뒤집힘
+  const CYCLE = 60000;
+  const glassTurn = document.getElementById('glassTurn');
+  const topSand = document.getElementById('topSand');
+  const bottomSand = document.getElementById('bottomSand');
+  const stream = document.getElementById('stream');
+  let shownCycle = 0;
+  let flipping = false;
+
+  function drawSand(p) {
+    // 위쪽: 가운데가 살짝 꺼지며 줄어드는 모래
+    const y = 36 + 84 * p;
+    const dip = p > 0 && p < 1 ? 6 : 0;
+    topSand.setAttribute('d', `M0 ${y} Q80 ${y + dip * 2} 160 ${y} V121 H0 Z`);
+    // 아래쪽: 봉긋하게 쌓이는 모래 더미
+    const h = 78 * p;
+    const top = 210 - h;
+    const peak = Math.min(12, p * 48);
+    bottomSand.setAttribute('d', p > 0 ? `M0 211 V${top} Q80 ${top - peak * 2} 160 ${top} V211 Z` : '');
+    stream.setAttribute('y2', top - peak);
+  }
+
+  function updateHourglass(t) {
+    const cycle = Math.floor(t / CYCLE);
+    if (cycle > shownCycle && !flipping) {
+      flipping = true;
+      drawSand(1);
+      stream.classList.remove('on');
+      glassTurn.classList.add('flipping');
+    }
+    if (flipping) return;
+    drawSand((t % CYCLE) / CYCLE);
+    stream.classList.toggle('on', running);
+  }
+
+  glassTurn.addEventListener('transitionend', () => {
+    glassTurn.classList.remove('flipping');
+    shownCycle = Math.floor(current() / CYCLE);
+    flipping = false;
+    updateHourglass(current());
+  });
+
+  const pad = (n, len = 2) => String(n).padStart(len, '0');
+
+  function format(ms) {
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor(ms / 60000) % 60;
+    const s = Math.floor(ms / 1000) % 60;
+    const cs = Math.floor(ms / 10) % 100;
+    return { main: `${pad(h)}:${pad(m)}:${pad(s)}`, ms: `.${pad(cs)}` };
+  }
+
+  function current() {
+    return running ? elapsed + (performance.now() - startTime) : elapsed;
+  }
+
+  function render() {
+    const now = current();
+    const t = format(now);
+    display.innerHTML = `${t.main}<span class="ms">${t.ms}</span>`;
+    updateHourglass(now);
+    if (running) frameId = requestAnimationFrame(render);
+  }
+
+  function updateButtons() {
+    startBtn.disabled = running;
+    stopBtn.disabled = !running;
+    lapBtn.disabled = !running;
+    resetBtn.disabled = running || current() === 0;
+  }
+
+  function start() {
+    if (running) return;
+    startTime = performance.now();
+    running = true;
+    updateButtons();
+    render();
+  }
+
+  function stop() {
+    if (!running) return;
+    elapsed += performance.now() - startTime;
+    running = false;
+    cancelAnimationFrame(frameId);
+    render();
+    updateButtons();
+  }
+
+  function lap() {
+    if (!running) return;
+    const now = current();
+    const split = format(now - lastLap);
+    const total = format(now);
+    lastLap = now;
+    lapCount++;
+    const li = document.createElement('li');
+    li.innerHTML = `<span>랩 ${lapCount}</span><span>+${split.main}${split.ms}</span><span>${total.main}${total.ms}</span>`;
+    lapsList.prepend(li);
+  }
+
+  function reset() {
+    running = false;
+    cancelAnimationFrame(frameId);
+    elapsed = lastLap = lapCount = shownCycle = 0;
+    flipping = false;
+    glassTurn.classList.remove('flipping');
+    lapsList.innerHTML = '';
+    render();
+    updateButtons();
+  }
+
+  startBtn.addEventListener('click', start);
+  stopBtn.addEventListener('click', stop);
+  lapBtn.addEventListener('click', lap);
+  resetBtn.addEventListener('click', reset);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); running ? stop() : start(); }
+    else if (e.key === 'l' || e.key === 'L') lap();
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+
+  render();
+</script>
+</body>
+</html>
